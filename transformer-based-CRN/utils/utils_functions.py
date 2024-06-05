@@ -1,6 +1,30 @@
 import numpy as np
 import pandas as pd
 import pickle
+import torch
+
+
+
+
+def get_autoregressive_sequence_predictions(projection_horizon, model, test_dataloader):
+    print('Performing multi-step ahead prediction.')
+    print('The setting for projection_horizon is: ', projection_horizon)
+
+    # unnecessary to process test dataset since we don't use lSTM
+
+    # for time_index in range(projection_horizon):
+
+
+
+
+def compute_loss_x_predictions(prediction, groudtruth, active_entries):
+    cross_entropy_loss = torch.sum((- groudtruth  * torch.log(prediction + 1e-8)) * active_entries) / torch.sum(active_entries)
+    return cross_entropy_loss
+
+
+def compute_loss_y_predictions(prediction, groudtruth, active_entries):
+    mse_loss = torch.sum(torch.pow(prediction-groudtruth, 2) * active_entries) / torch.sum(active_entries)
+    return mse_loss
 
 def get_processed_data(raw_sim_data,
                        scaling_params):

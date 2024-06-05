@@ -4,6 +4,8 @@ import numpy as np
 import math
 import torch
 from torch import nn, Tensor
+import torch.nn.functional as F
+
 torch.manual_seed(0)
 np.random.seed(0)
 
@@ -32,7 +34,7 @@ class PositionalEncoding(nn.Module):
 
 class TransformerModel(nn.Module):
 
-    def __init__(self, nums_treatment=4, nums_covariates=2, nums_outcome=1, nums_sequence_length=59, embedding_dim=512):
+    def __init__(self, nums_treatment=4, nums_covariates=2, nums_outcome=1, nums_sequence_length=59, embedding_dim=8):
         super(TransformerModel, self).__init__()
         # model params
         self.input_feature_num = nums_treatment + nums_outcome + nums_covariates
@@ -53,14 +55,18 @@ class TransformerModel(nn.Module):
         self.x_predictor = nn.Linear(self.embedding_dim + nums_covariates, nums_treatment)
 
     def forward(self, history_input, current_covariates, current_treatments):
+        
         history_input = self.input_projection(history_input)
+
         # history_input = history_input.transpose(0,1)
         self.Encoder_mask = self.Encoder_mask.to(history_input.device)
         encoder_representation = self.TransformerEncoder(history_input, mask = self.Encoder_mask) # previous historyrepresentation for [0, ..., T-1]
+
+        # encoder_representation = history_input
         y_input = torch.cat((encoder_representation, current_covariates, current_treatments), axis=-1)
-        x_input = torch.cat((encoder_representation, current_covariates), axis=-1)
+        x_input = torch.cat((encoder_representation, current_covariates), axis = -1)
         y_prediction = self.y_predictor(y_input)
-        x_prediction = self.x_predictor(x_input)
+        x_prediction = F.softmax(self.x_predictor(x_input),dim = -1) # logits to probability
         return y_prediction, x_prediction
 
 if __name__ == '__main__':
